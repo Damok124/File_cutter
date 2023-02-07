@@ -6,11 +6,14 @@
 /*   By: zharzi <zharzi@student.42angouleme.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/06 00:22:28 by zharzi            #+#    #+#             */
-/*   Updated: 2023/02/06 12:29:05 by zharzi           ###   ########.fr       */
+/*   Updated: 2023/02/07 01:19:02 by zharzi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "cutter.h"
+#include "asterix.h"
+#include "obelix.h"
+#include "idefix.h"
 
 int	ft_abs(int x)
 {
@@ -18,8 +21,6 @@ int	ft_abs(int x)
 		return (-x);
 	return (x);
 }
-
-#include "cutter.h"
 
 int	ft_atoi(const char *nptr)
 {
@@ -45,8 +46,6 @@ int	ft_atoi(const char *nptr)
 	}
 	return (i * k);
 }
-
-#include "cutter.h"
 
 void	*ft_calloc(size_t nmemb, size_t size)
 {

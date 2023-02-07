@@ -6,16 +6,16 @@
 /*   By: zharzi <zharzi@student.42angouleme.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/06 11:50:00 by zharzi            #+#    #+#             */
-/*   Updated: 2023/02/06 16:22:52 by zharzi           ###   ########.fr       */
+/*   Updated: 2023/02/07 01:22:30 by zharzi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "file_cutter.h"
 
-typedef struct s_inc {
+typedef struct s_seq {
 	char			*line;
-	struct s_inc	*next;
-}					t_inc;
+	struct s_seq	*next;
+}					t_seq;
 
 int	ft_count_functions(char *filename)
 {
@@ -31,17 +31,18 @@ int	ft_count_functions(char *filename)
 	{
 		if (buffer[0] == '}')
 			n++;
+		ft_true_free((void **)&buffer);
 		buffer = get_next_line(fd);
 	}
 	close (fd);
 	return (n);
 }
 
-t_inc	*ft_new_includes(char *line)
+t_seq	*ft_new_seq(char *line)
 {
-	t_inc	*new;
+	t_seq	*new;
 
-	new = (t_inc *)malloc(sizeof(t_inc));
+	new = (t_seq *)malloc(sizeof(t_seq));
 	if (!new)
 		return (NULL);
 	new->line = ft_strdup(line);
@@ -49,10 +50,10 @@ t_inc	*ft_new_includes(char *line)
 	return (new);
 }
 
-void	ft_includes_to_end(t_inc **includes, char *buffer)
+void	ft_to_end_of_seq(t_seq **includes, char *buffer)
 {
-	t_inc	*lst;
-	t_inc	*tmp;
+	t_seq	*lst;
+	t_seq	*tmp;
 
 	lst = *includes;
 	while (lst)
@@ -60,12 +61,12 @@ void	ft_includes_to_end(t_inc **includes, char *buffer)
 		tmp = lst;
 		lst = lst->next;
 	}
-	tmp->next = ft_new_includes(buffer);
+	tmp->next = ft_new_seq(buffer);
 }
 
-t_inc	*ft_get_includes(char *filename)
+t_seq	*ft_get_includes(char *filename)
 {
-	t_inc	*includes;
+	t_seq	*includes;
 	int		fd;
 	char	*buffer;
 
@@ -74,68 +75,165 @@ t_inc	*ft_get_includes(char *filename)
 	if (fd)
 	{
 		buffer = get_next_line(fd);
-		if (ft_strncmp(buffer, "#include ", ft_strlen("#include ")))
-			includes = ft_new_includes(buffer);
 		while (buffer)
 		{
-			if (ft_strncmp(buffer, "#include ", ft_strlen("#include ")))
+			if (!ft_strncmp(buffer, "#include ", ft_strlen("#include ")))
 			{
 				if (!includes)
-					includes = ft_new_includes(buffer);
+					includes = ft_new_seq(buffer);
 				else
-					ft_includes_to_end(&includes, buffer);
+					ft_to_end_of_seq(&includes, buffer);
 			}
 			ft_true_free((void **)&buffer);
 			buffer = get_next_line(fd);
 		}
 		close (fd);
 	}
-	else
-		printf("Bad fd.\n");
 	return (includes);
 }
 
-char	**ft_init_all(int size)
-{
-	char	**all;
-
-	all = (char **)malloc(sizeof(char *) * (size + 1));
-	if (!all)
-		return (NULL);
-	all[size] = NULL;
-	return (all);
-}
-
-void	ft_show_includes(t_inc *includes)
+void	ft_show_seq(t_seq *seq)
 {
 	int	i;
 
 	i = 0;
-	while (includes)
+	while (seq)
 	{
 		i++;
-		printf("%d : [%s]\n", i, includes->line);
-		includes = includes->next;
+		printf("%-3d : %s", i, seq->line);
+		seq = seq->next;
+	}
+	printf("\n");
+}
+
+void	ft_free_lst(t_seq *seq)
+{
+	t_seq	*tmp;
+
+	while (seq)
+	{
+		ft_true_free((void **)&seq->line);
+		tmp = seq;
+		seq = seq->next;
+		ft_true_free((void **)&tmp);
 	}
 }
 
-void	ft_cutter(char **argv)
+t_seq	**ft_init_functions(int nb)
 {
-	char	**all;
-	t_inc	*includes;
+	t_seq	**fun;
+	int		i;
+
+	i = -1;
+	fun = (t_seq **)malloc(sizeof(t_seq *) * (nb + 1));
+	if (!fun)
+		return (NULL);
+	while (++i <= nb)
+		fun[i] = NULL;
+	return (fun);
+}
+
+int	ft_set_fd_position(char *filename, t_seq *inc, char **buffer)
+{
+	int		fd;
+	char	*tmp;
+
+	fd = open(filename, O_RDONLY);
+	tmp = get_next_line(fd);
+	while (inc)
+	{
+		while (tmp && ft_strncmp(tmp, inc->line, ft_strlen(inc->line)))
+		{
+			ft_true_free((void **)&tmp);
+			tmp = get_next_line(fd);
+		}
+		inc = inc->next;
+	}
+	if (tmp)
+	{
+		ft_true_free((void **)&tmp);
+		tmp = get_next_line(fd);
+		*buffer = tmp;
+		return (fd);
+	}
+	close(fd);
+	return (-1);
+}
+
+void	ft_put_inc_to_fun(t_seq **new, t_seq *inc)
+{
+	while (inc)
+	{
+		ft_to_end_of_seq(new, inc->line);
+		inc = inc->next;
+	}
+}
+
+t_seq	*ft_get_function(int fd, t_seq *inc, char **buffer)
+{
+	t_seq	*new;
+	char	*buff;
+
+	buff = ft_strdup(*buffer);
+	free(*buffer);
+	new = ft_new_seq(inc->line);
+	ft_put_inc_to_fun(&new, inc->next);
+	while (buff && buff[0] != '}')
+	{
+		ft_to_end_of_seq(&new, buff);
+		ft_true_free((void **)&buff);
+		buff = get_next_line(fd);
+	}
+	if (buff && buff[0] == '}')
+	{
+		ft_to_end_of_seq(&new, buff);
+		ft_true_free((void **)&buff);
+		*buffer = get_next_line(fd);
+	}
+	return (new);
+}
+
+void	ft_kill_move(char *filename, t_seq **fun, t_seq *inc, int nb)
+{
+	int		i;
+	int		fd;
+	char	*buffer;
+
+	fd = -1;
+	i = 0;
+	buffer = NULL;
+	if (inc && inc->line[0] != '\0')
+		fd = ft_set_fd_position(filename, inc, &buffer);
+	if (fd < 0)
+		exit(1);
+	while (i < nb)
+	{
+		fun[i] = ft_get_function(fd, inc, &buffer);
+		ft_show_seq(fun[i]);///////////////////////////////////////
+		i++;
+	}
+}
+
+void	ft_file_cutter(char **argv)
+{
+	t_seq	**fun;
+	t_seq	*includes;
 	int		nb;
 
 	nb = ft_count_functions(argv[1]);
-	printf("%d\n", nb);
-	all = ft_init_all(nb);
+	printf("Number of functions : %d\n", nb);
 	includes = ft_get_includes(argv[1]);
-	ft_show_includes(includes);
-	if (all)
+	if (!includes)
+		includes = ft_new_seq("");
+	printf("List of includes :\n");
+	ft_show_seq(includes);////////////////////////////////////
+	fun = ft_init_functions(nb);
+	if (fun)
 	{
-		ft_full_free((void **)all);
+		ft_kill_move(argv[1], fun, includes, nb);
 	}
-	else
-		printf("Error. Malloc failed.\n");
+	ft_free_lst(includes);
+	ft_free_lst(includes);
 }
 
 void	ft_cutter_perror(int err_no)

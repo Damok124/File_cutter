@@ -6,7 +6,7 @@
 /*   By: zharzi <zharzi@student.42angouleme.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/06 11:47:31 by zharzi            #+#    #+#             */
-/*   Updated: 2023/02/06 16:16:36 by zharzi           ###   ########.fr       */
+/*   Updated: 2023/02/06 17:12:43 by zharzi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,6 @@
 
 int		ft_cutter_parsing(int ac, char **argv, int *err_no);
 void	ft_cutter_perror(int err_no);
-void	ft_cutter(char **argv);
+void	ft_file_cutter(char **argv);
 
 #endif
