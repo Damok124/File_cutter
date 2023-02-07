@@ -6,7 +6,7 @@
 /*   By: zharzi <zharzi@student.42angouleme.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/06 11:50:00 by zharzi            #+#    #+#             */
-/*   Updated: 2023/02/07 01:22:30 by zharzi           ###   ########.fr       */
+/*   Updated: 2023/02/07 12:27:50 by zharzi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,7 +193,7 @@ t_seq	*ft_get_function(int fd, t_seq *inc, char **buffer)
 	return (new);
 }
 
-void	ft_kill_move(char *filename, t_seq **fun, t_seq *inc, int nb)
+void	ft_get_file_content(char *filename, t_seq **fun, t_seq *inc, int nb)
 {
 	int		i;
 	int		fd;
@@ -214,11 +214,62 @@ void	ft_kill_move(char *filename, t_seq **fun, t_seq *inc, int nb)
 	}
 }
 
+char	*ft_get_name(t_seq *fun)
+{
+	char	*tmp;
+	int		i;
+
+	tmp = NULL;
+	i = 0;
+	while (fun && !ft_isalpha(fun->line[0]))
+		fun = fun->next;
+	if (fun && ft_isalpha(fun->line[0]))
+	{
+		tmp = fun->line;
+		while (tmp && tmp[0] && ft_isalpha(tmp[0]))
+			tmp += 1;
+		while (tmp && tmp[0] && ft_strchr("\t *", tmp[0]))
+			tmp += 1;
+		if (tmp && tmp[0] && ft_isalpha(tmp[0]))
+			while (tmp && tmp[i] && tmp[i] != '(')
+				i++;
+		if (tmp && tmp[i] && tmp[i] == '(')
+		{
+			tmp[i] = '.';
+			tmp[i + 1] = 'c';
+			if (tmp[i + 2])
+				tmp[i + 2] = '\0';
+			tmp = ft_strdup(tmp);
+			return (tmp);
+		}
+	}
+	return (NULL);
+}
+
+char	**ft_get_fun_names(t_seq **fun, int nb)
+{
+	char	**names;
+	int		i;
+
+	i = 0;
+	names = (char **)malloc(sizeof(char *) * (nb + 1));
+	if (!names)
+		return (NULL);
+	names[nb] = NULL;
+	while (i < nb)
+	{
+		names[i] = ft_get_name(fun[i]);
+		i++;
+	}
+	return (names);
+}
+
 void	ft_file_cutter(char **argv)
 {
 	t_seq	**fun;
 	t_seq	*includes;
 	int		nb;
+	char	**fun_names;
 
 	nb = ft_count_functions(argv[1]);
 	printf("Number of functions : %d\n", nb);
@@ -230,9 +281,10 @@ void	ft_file_cutter(char **argv)
 	fun = ft_init_functions(nb);
 	if (fun)
 	{
-		ft_kill_move(argv[1], fun, includes, nb);
+		ft_get_file_content(argv[1], fun, includes, nb);
+		fun_names = ft_get_fun_names(fun, nb);
+		ft_show_strs(fun_names);
 	}
-	ft_free_lst(includes);
 	ft_free_lst(includes);
 }
 
